@@ -7,8 +7,17 @@ const pool = new Pool({
 	port: process.env.DB_PORT,
 });
 
+const devices = {};
+async function fetchDevices() {
+	const res = await pool.query('SELECT * from devices');
+	for (const row of res.rows)
+		devices[row.key] = {id: row.id, desc: row.description};
+	global.log(`Devices auth keys: ${Object.keys(devices).join()}`);
+}
+fetchDevices();
+
 async function insertData() {
-	
+
 }
 
 module.exports = {
