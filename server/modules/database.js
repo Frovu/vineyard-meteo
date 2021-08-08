@@ -16,10 +16,35 @@ async function fetchDevices() {
 }
 fetchDevices();
 
-async function insertData() {
+const COLUMNS = {
+	air_temperature: 't',
+	air_humidity: 'h',
+	air_pressure: 'p',
+	lightness: 'l',
+	precipitation_mm: 'pp',
+	soil_moisture: 'sm',
+	soil_temperature: 'st',
+	soil_temperature_2: 'st2',
+	rssi: 'rssi',
+	voltage: 'v'
+};
 
+function authorize(body) {
+	return body.key && devices[body.key];
+}
+
+async function insertData(body) {
+	const data = { dev: devices[body.key].id };
+	for (const column in COLUMNS) {
+		const value = body[column] || body[COLUMNS[column]];
+		if (value)
+			data[column] = value;
+	}
+	const q = `INSERT INTO data (${Object.keys(data)}) VALUES (${Object.keys(data).map((v, i)=>`$${i+1}`)})`;
+	await pool.query(q, (Object.values(data)));
 }
 
 module.exports = {
+	authorize,
 	insertData
 };
