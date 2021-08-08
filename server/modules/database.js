@@ -30,11 +30,11 @@ const COLUMNS = {
 };
 
 function authorize(body) {
-	return body.key && devices[body.key];
+	return body.dev && devices[body.dev];
 }
 
 async function insertData(body) {
-	const data = { dev: devices[body.key].id };
+	const data = { dev: devices[body.dev].id };
 	for (const column in COLUMNS) {
 		const value = body[column] || body[COLUMNS[column]];
 		if (value)
