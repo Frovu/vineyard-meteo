@@ -8,10 +8,12 @@ gpio.write(LED_PIN, gpio.HIGH)
 
 local id, sda, scl = 0, 1, 2
 i2c.setup(id, sda, scl, i2c.SLOW)
+bh1750 = require("bh1750")
 
-local function send()
+local function send(light)
 	local body = sjson.encode({
 		dev = settings.dev,
+		l = light,
 		-- TODO
 	})
 	print("Heap = "..node.heap())
@@ -27,7 +29,8 @@ end
 
 local function measure_and_send()
 	gpio.write(LED_PIN, gpio.LOW)
-	send() -- TODO
+	bh1750.read()
+	l = bh1750.getlux()
 	gpio.write(LED_PIN, gpio.HIGH)
 end
 
