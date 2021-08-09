@@ -157,7 +157,7 @@ end
 function read_reg(id, dev_addr, reg_addr, n)
   i2c_start(id)
   if not i2c_address(id, dev_addr, i2c_TRANSMITTER) then
-    -- debug("No ACK on address: %x", dev_addr)
+    print("No ACK on i2c address: "..dev_addr)
     return nil
   end
   i2c_write(id, reg_addr)

@@ -17,13 +17,12 @@ local press_oss = 4 -- x8
 local humi_oss = 2 -- x2
 local sensor_mode = 0 -- sleep
 local IIR_filter = 4 -- x16
-bme280 = require("bme280")
-bme280.setup(0, nil, temp_oss, press_oss, humi_oss, sensor_mode, IIR_filter)
-print("bme: addr, isbme = ", bme280sensor and bme280sensor.addr, bme280sensor and bme280sensor._isbme)
+local bme280 = require("bme280").setup(0, 1, temp_oss, press_oss, humi_oss, sensor_mode, IIR_filter)
+print("bme: addr, isbme = ", bme280 and bme280.addr, bme280 and bme280._isbme)
 
 local P_MM_PER_TRIG = 1
 local trig_counter = 0 -- precipitation
-gpio.trig(TRIG_PIN, "both", function() trig_counter+=1 end)
+gpio.trig(TRIG_PIN, "both", function() trig_counter=trig_counter+1 end)
 
 local function send(data)
 	data["dev"]= settings.dev
@@ -40,22 +39,27 @@ local function send(data)
 end
 
 local function measure_and_send()
-	gpio.write(LED_PIN, gpio.LOW)
-	local precipitation = trig_counter * P_MM_PER_TRIG
+	local data = {
+		pp = trig_counter * P_MM_PER_TRIG
+	}
 	trig_counter = 0
+	gpio.write(LED_PIN, gpio.LOW)
 	bh1750.read()
-	bme280:startreadout(function(T, P, H)
+	if bme280 then bme280:startreadout(function(T, P, H)
 		if not T or not P or not H then
 			print("bme280 returned", T, P, H)
 		end
-		send({
-			l = bh1750.getlux(),
-			t = T,
-			p = P,
-			h = H,
-			pp = precipitation
-		})
-	end)
+		data["t"] = T
+		data["p"] = P
+		data["h"] = H
+		data["l"] = bh1750.read()
+		send(data)
+	end, 200)
+	else
+		tmr.delay(200000)
+		data["l"] = bh1750.read()
+		send(data)
+	end
 	gpio.write(LED_PIN, gpio.HIGH)
 end
 

@@ -1,4 +1,4 @@
-dofile("settings.lua")
+dofile("settings.lc")
 
 local measure = require("measure")
 
