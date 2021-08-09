@@ -13,7 +13,10 @@ end
 
 function M.read()
 	i2c.start(id)
-	i2c.address(id, DEV_ADDR, i2c.RECEIVER)
+	if not i2c.address(id, DEV_ADDR, i2c.RECEIVER) then
+		print("No ACK on i2c address: "..DEV_ADDR)
+		return nil
+	end
 	local data = i2c.read(id, 2)
 	i2c.stop(id)
 	local lraw = data:byte(1) * 0x100 + data:byte(2)

@@ -9,7 +9,7 @@ gpio.mode(LED_PIN, gpio.OUTPUT)
 gpio.write(LED_PIN, gpio.HIGH)
 
 local id, sda, scl = 0, 1, 2
-i2c.setup(id, sda, scl, i2c.SLOW)
+print("i2c setup "..i2c.setup(id, sda, scl, i2c.SLOW))
 bh1750 = require("bh1750")
 
 local temp_oss = 4 -- x8 ! for some reason it refuses to work with smaller oversampling
@@ -22,13 +22,14 @@ print("bme: addr, isbme = ", bme280 and bme280.addr, bme280 and bme280._isbme)
 
 local P_MM_PER_TRIG = 1
 local trig_counter = 0 -- precipitation
+gpio.mode(TRIG_PIN, gpio.INT)
 gpio.trig(TRIG_PIN, "both", function() trig_counter=trig_counter+1 end)
 
 local function send(data)
 	data["dev"]= settings.dev
 	local body = sjson.encode(data)
 	print("Heap = "..node.heap())
-	print("Sending data: "..body)
+	print("->"..body)
 	http.post(settings.uri, "Content-Type: application/json\r\n", body, function(code, data)
 		if (code ~= 200) then
 			print("Failed: "..code)
@@ -49,10 +50,10 @@ local function measure_and_send()
 		if not T or not P or not H then
 			print("bme280 returned", T, P, H)
 		end
-		data["t"] = T
-		data["p"] = P
-		data["h"] = H
 		data["l"] = bh1750.read()
+		data["t"] = string.format("%.2f", T)
+		data["p"] = string.format("%.2f", P)
+		data["h"] = string.format("%.2f", H)
 		send(data)
 	end, 200)
 	else
