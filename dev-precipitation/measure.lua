@@ -10,12 +10,21 @@ local id, sda, scl = 0, 1, 2
 i2c.setup(id, sda, scl, i2c.SLOW)
 bh1750 = require("bh1750")
 
-local function send(light)
-	local body = sjson.encode({
-		dev = settings.dev,
-		l = light,
-		-- TODO
-	})
+local temp_oss = 4 -- x8 ! for some reason it refuses to work with smaller oversampling
+local press_oss = 4 -- x8
+local humi_oss = 2 -- x2
+local sensor_mode = 0 -- sleep
+local IIR_filter = 4 -- x16
+bme280 = require("bme280")
+bme280.setup(0, nil, temp_oss, press_oss, humi_oss, sensor_mode, IIR_filter)
+print("bme: addr, isbme = ", bme280sensor and bme280sensor.addr, bme280sensor and bme280sensor._isbme)
+
+local P_MM_PER_TRIG = 1
+local trig_counter = 0 -- precipitation
+
+local function send(data)
+	data["dev"]= settings.dev
+	local body = sjson.encode(data)
 	print("Heap = "..node.heap())
 	print("Sending data: "..body)
 	http.post(settings.uri, "Content-Type: application/json\r\n", body, function(code, data)
@@ -29,8 +38,21 @@ end
 
 local function measure_and_send()
 	gpio.write(LED_PIN, gpio.LOW)
+	local precipitation = trig_counter * P_MM_PER_TRIG
+	trig_counter = 0
 	bh1750.read()
-	l = bh1750.getlux()
+	bme280:startreadout(function(T, P, H)
+		if not T or not P or not H then
+			print("bme280 returned", T, P, H)
+		end
+		send({
+			l = bh1750.getlux(),
+			t = T,
+			p = P,
+			h = H,
+			pp = precipitation
+		})
+	end)
 	gpio.write(LED_PIN, gpio.HIGH)
 end
 
