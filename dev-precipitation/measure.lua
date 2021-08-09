@@ -2,6 +2,8 @@
 -- local DS18B20_PIN = 5
 -- ds18b20.init(DS18B20_PIN)
 
+local TRIG_PIN = 3
+
 local LED_PIN = 4
 gpio.mode(LED_PIN, gpio.OUTPUT)
 gpio.write(LED_PIN, gpio.HIGH)
@@ -21,6 +23,7 @@ print("bme: addr, isbme = ", bme280sensor and bme280sensor.addr, bme280sensor an
 
 local P_MM_PER_TRIG = 1
 local trig_counter = 0 -- precipitation
+gpio.trig(TRIG_PIN, "both", function() trig_counter+=1 end)
 
 local function send(data)
 	data["dev"]= settings.dev
