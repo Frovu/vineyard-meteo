@@ -2,7 +2,7 @@
 -- local DS18B20_PIN = 5
 -- ds18b20.init(DS18B20_PIN)
 
-local TRIG_PIN = 3
+local TRIG_PIN = 5
 
 local LED_PIN = 4
 gpio.mode(LED_PIN, gpio.OUTPUT)
@@ -20,10 +20,16 @@ local IIR_filter = 4 -- x16
 local bme280 = require("bme280").setup(0, 1, temp_oss, press_oss, humi_oss, sensor_mode, IIR_filter)
 print("bme: addr, isbme = ", bme280 and bme280.addr, bme280 and bme280._isbme)
 
-local P_MM_PER_TRIG = 1
+local P_MM_PER_TRIG = 0.345
 local trig_counter = 0 -- precipitation
-gpio.mode(TRIG_PIN, gpio.INT)
-gpio.trig(TRIG_PIN, "both", function() trig_counter=trig_counter+1 end)
+local last = 0 -- software edge smoothing
+gpio.mode(TRIG_PIN, gpio.INT, gpio.PULLUP)
+gpio.trig(TRIG_PIN, "both", function(lvl, when)
+	if when - last > 100000 then
+		trig_counter=trig_counter+1
+		last = when
+		end
+end)
 
 local function send(data)
 	data["dev"]= settings.dev
@@ -41,7 +47,7 @@ end
 
 local function measure_and_send()
 	local data = {
-		pp = trig_counter * P_MM_PER_TRIG
+		pp = string.format("%.3f", trig_counter * P_MM_PER_TRIG)
 	}
 	trig_counter = 0
 	gpio.write(LED_PIN, gpio.LOW)
@@ -50,7 +56,7 @@ local function measure_and_send()
 		if not T or not P or not H then
 			print("bme280 returned", T, P, H)
 		end
-		data["l"] = bh1750.read()
+		data["l"] = string.format("%.2f", bh1750.read())
 		data["t"] = string.format("%.2f", T)
 		data["p"] = string.format("%.2f", P)
 		data["h"] = string.format("%.2f", H)
@@ -58,7 +64,7 @@ local function measure_and_send()
 	end, 200)
 	else
 		tmr.delay(200000)
-		data["l"] = bh1750.read()
+		data["l"] = string.format("%.2f", bh1750.read())
 		send(data)
 	end
 	gpio.write(LED_PIN, gpio.HIGH)
