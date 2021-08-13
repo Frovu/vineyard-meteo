@@ -38,7 +38,7 @@ function updatePlot(data, fields) {
 			borderColor: COLORS[f],
 			fill: false,
 			yAxisID: `${f}-y-axis`,
-			hidden: plot.data.datasets[i] ? getHidden(plot.data.datasets[i]) : !f.startsWith('air'),
+			hidden: plot.data.datasets[i] ? getHidden(plot.data.datasets[i]) : f.startsWith('air'),
 		};
 	});
 	plot.options.scales.yAxes = fields.map(f => {return {

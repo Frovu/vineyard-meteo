@@ -29,6 +29,8 @@ const COLUMNS = {
 	voltage: 'v'
 };
 
+const ACCUMULATE = ['precipitation_mm'];
+
 function authorize(body) {
 	return body.dev && devices[body.dev];
 }
@@ -58,12 +60,18 @@ async function get(params) {
 	const q = `SELECT at,${fields.join(',')} FROM data ` + ((from||to)?'WHERE ':'')
 		+ (from?`at >= to_timestamp(${from}) `:'') + (to?(from?'AND ':'') + `at < to_timestamp(${to})`:'');
 	const res = await pool.query({ rowMode: 'array', text: q});
+	const resFields = res.fields.map(f => f.name);
 	const rows = [];
 	if (resolution !== 1 && res.rows.length) { // TODO: do this in sql
 		const rr = res.rows;
 		let sums = rr[0];
 		for (let i=1; i<rr.length; ++i) {
 			if (i % resolution === 0) {
+				const avg = Object.keys(COLUMNS).filter(c => !ACCUMULATE.includes(c));
+				for (const f of avg)
+					sums[resFields.indexOf(f)] /= resolution;
+				for (let j=1; j<sums.length; ++j)
+					sums[j] = Math.round(sums[j] * 100) / 100;
 				rows.push(sums);
 				sums = rr[i];
 			} else {
@@ -75,7 +83,7 @@ async function get(params) {
 	}
 	return {
 		rows: resolution === 1 ? res.rows : rows,
-		fields: res.fields.map(f => f.name)
+		fields: resFields
 	};
 }
 
