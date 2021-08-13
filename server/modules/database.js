@@ -48,6 +48,9 @@ async function get(params) {
 	const fields = typeof params.fields !== 'string' ? []
 		: params.fields.split(',').reduce((a, f) => COLUMNS[f] ? a.concat([f]) : a, []);
 	if (!fields.length) return null;
+	let resolution = params.resolution && parseInt(params.resolution);
+	if (!resolution || isNaN(resolution) || resolution < 1 || resolution > 24*60)
+		resolution = 60;
 	const from = params.from && parseInt(params.from);
 	const to = params.to && parseInt(params.to);
 	if ((from && (isNaN(from) || from < 0)) || (to && (isNaN(to) || to < 0)))
@@ -55,8 +58,23 @@ async function get(params) {
 	const q = `SELECT at,${fields.join(',')} FROM data ` + ((from||to)?'WHERE ':'')
 		+ (from?`at >= to_timestamp(${from}) `:'') + (to?(from?'AND ':'') + `at < to_timestamp(${to})`:'');
 	const res = await pool.query({ rowMode: 'array', text: q});
+	const rows = [];
+	if (resolution !== 1 && res.rows.length) { // TODO: do this in sql
+		const rr = res.rows;
+		let sums = rr[0];
+		for (let i=1; i<rr.length; ++i) {
+			if (i % resolution === 0) {
+				rows.push(sums);
+				sums = rr[i];
+			} else {
+				const row = rr[i];
+				for (let j=1; j<sums.length; ++j)
+					sums[j] += row[j];
+			}
+		}
+	}
 	return {
-		rows: res.rows,
+		rows: resolution === 1 ? res.rows : rows,
 		fields: res.fields.map(f => f.name)
 	};
 }

@@ -59,7 +59,8 @@ function encodeParams(obj) {
 async function update() { // eslint-disable-line
 	const params = {
 		fields: Object.keys(COLORS).join(','),
-		from: Math.floor(Date.now()/1000 - 3600*24*7)
+		from: Math.floor(Date.now()/1000 - 3600*24*7),
+		resolution: 60,
 	};
 	const resp = await fetch(`api/data${encodeParams(params)}`, { method: 'GET' });
 	if (resp.status !== 200)
