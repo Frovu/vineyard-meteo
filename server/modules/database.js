@@ -44,7 +44,25 @@ async function insertData(body) {
 	await pool.query(q, (Object.values(data)));
 }
 
+async function get(params) {
+	const fields = typeof params.fields !== 'string' ? []
+		: params.fields.split(',').reduce((a, f) => COLUMNS[f] ? a.concat([f]) : a, []);
+	if (!fields.length) return null;
+	const from = params.from && parseInt(params.from);
+	const to = params.to && parseInt(params.to);
+	if ((from && (isNaN(from) || from < 0)) || (to && (isNaN(to) || to < 0)))
+		return null;
+	const q = `SELECT at,${fields.join(',')} FROM data ` + ((from||to)?'WHERE ':'')
+		+ (from?`at >= to_timestamp(${from}) `:'') + (to?(from?'AND ':'') + `at < to_timestamp(${to})`:'');
+	const res = await pool.query({ rowMode: 'array', text: q});
+	return {
+		rows: res.rows,
+		fields: res.fields.map(f => f.name)
+	};
+}
+
 module.exports = {
 	authorize,
-	insertData
+	insertData,
+	get
 };
