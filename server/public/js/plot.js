@@ -102,9 +102,12 @@ async function update() {
 		to: to.getTime()/1000,
 		resolution: 1,
 	};
+	console.time('query');
 	const resp = await fetch(`api/data${encodeParams(params)}`, { method: 'GET' });
+	console.timeEnd('query');
 	if (resp.status !== 200)
 		return console.log('Failed to fetch data', resp.status);
+	console.time('prepare');
 	const data = await resp.json();
 	let plotData = data.fields.map(()=>Array(data.rows.length));
 	for (let i = 0; i < data.rows.length; ++i) {
@@ -114,11 +117,14 @@ async function update() {
 			plotData[j][i] = row[j];
 		}
 	}
+	console.timeEnd('prepare');
+	console.time('plot');
 	if (uplot) {
 		uplot.setData(plotData);
 	} else {
 		drawPlot(plotData, data.fields);
 	}
+	console.timeEnd('plot');
 	return true;
 }
 
