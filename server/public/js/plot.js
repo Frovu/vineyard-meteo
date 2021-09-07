@@ -1,6 +1,6 @@
 import uPlot from './uPlot.iife.min.js';
 
-let uplot;
+let uplot, spin;
 
 function getSize() {
 	return {
@@ -9,6 +9,7 @@ function getSize() {
 	};
 }
 
+const SPIN = '|/-\\';
 const FIELDS = ['air_temperature', 'air_humidity', 'air_pressure', 'lightness', 'precipitation_mm'];
 const DARK_GRAY = 'rgba(255,255,255,0.1)';
 const GRAY = 'rgba(255,255,255,0.5)';
@@ -17,7 +18,9 @@ function drawPlot(data) {
 	uplot = new uPlot({
 		...getSize(),
 		series: [
-			{},
+			{
+				value: '{YYYY}-{MM}-{DD} {HH}:{mm}'
+			},
 			{
 				label: 'Temperature',
 				scale: '°C',
@@ -53,7 +56,7 @@ function drawPlot(data) {
 		],
 		axes: [
 			{
-				grid: { stroke: 'rgba(255,255,255,0.07)' }
+				grid: { stroke: DARK_GRAY }
 			},
 			{
 				stroke: GRAY,
@@ -102,6 +105,12 @@ async function update() {
 		to: to.getTime()/1000,
 		resolution: 1,
 	};
+	const button = document.getElementById('plotbtn');
+	let i = 0;
+	spin = spin || setInterval(() => {
+		button.innerHTML = SPIN[i]+SPIN[i]+SPIN[i++];
+		if (i >= SPIN.length) i = 0;
+	}, 150);
 	console.time('query');
 	const resp = await fetch(`api/data${encodeParams(params)}`, { method: 'GET' });
 	console.timeEnd('query');
@@ -125,6 +134,9 @@ async function update() {
 		drawPlot(plotData, data.fields);
 	}
 	console.timeEnd('plot');
+	clearInterval(spin);
+	spin = null;
+	button.innerHTML = 'plot!';
 	return true;
 }
 
@@ -138,5 +150,4 @@ for (const id of ['from', 'to']) {
 		if (e.keyCode === 13)
 			update();
 	};
-
 }
