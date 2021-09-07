@@ -26,6 +26,7 @@ function drawPlot(data) {
 				scale: '°C',
 				value: (u, v) => v == null ? '-' : v.toFixed(1) + ' °C',
 				stroke: 'rgba(0,255,255,1)',
+				points: { fill: 'black', stroke: 'rgba(0,255,255,1)' }
 			},
 			{
 				label: 'Humidity',
@@ -52,8 +53,8 @@ function drawPlot(data) {
 				value: (u, v) => v == null ? '-' : v.toFixed(1) + ' mm',
 				stroke: 'rgba(100,0,255,1)',
 				show: false
-			},
-		],
+			}
+		].map(s => {s.points = { size: 7 , fill: 'black', stroke: s.stroke }; return s;}),
 		axes: [
 			{
 				grid: { stroke: DARK_GRAY }
@@ -73,10 +74,33 @@ function drawPlot(data) {
 				ticks: { stroke: DARK_GRAY, width: 1 },
 				grid:  { stroke: DARK_GRAY, width: 1 }
 			},
+			{
+				show: false,
+				side: 1,
+				stroke: GRAY,
+				scale: 'mb',
+				values: (u, vals) => vals.map(v => v.toFixed(0) + ' mb'),
+				ticks: { stroke: DARK_GRAY, width: 1 },
+				grid:  { stroke: DARK_GRAY, width: 1 }
+			},
+			{
+				show: false,
+				stroke: GRAY,
+				scale: 'lx',
+				values: (u, vals) => vals.map(v => v.toFixed(0) + ' lx'),
+				ticks: { stroke: DARK_GRAY, width: 1 },
+				grid:  { stroke: DARK_GRAY, width: 1 }
+			},
 		],
 		cursor: {
-			drag: { dist: 16 }
-		}
+			drag: { dist: 16 },
+			points: { size: 6, fill: (self, i) => self.series[i]._stroke }
+		},
+		// hooks: {
+		// 	setSeries: [(self, i, opts) => {
+		// 		console.log(opts)
+		// 	}]
+		// }
 	}, data, document.body);
 	window.addEventListener('resize', () => {
 		uplot.setSize(getSize());
@@ -107,10 +131,12 @@ async function update() {
 	};
 	const button = document.getElementById('plotbtn');
 	let i = 0;
-	spin = spin || setInterval(() => {
+	const spinfn = () => {
 		button.innerHTML = SPIN[i]+SPIN[i]+SPIN[i++];
 		if (i >= SPIN.length) i = 0;
-	}, 150);
+	};
+	spinfn();
+	spin = spin || setInterval(spinfn, 150);
 	console.time('query');
 	const resp = await fetch(`api/data${encodeParams(params)}`, { method: 'GET' });
 	console.timeEnd('query');
