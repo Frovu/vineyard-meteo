@@ -7,6 +7,7 @@ input {
 	text-align: center;
 	border-style: hidden;
 	font-family: inherit;
+	font-size: inherit;
 	width: 128px;
 	background-color: rgba(255, 255, 255, 0.1);
 	color: inherit;
@@ -17,6 +18,7 @@ button {
 	border-width: 1px;
 	border-color: red;
 	font-family: inherit;
+	font-size: inherit;
 	width: 64px;
 	background-color: black;
 	color: red;
@@ -24,6 +26,7 @@ button {
 }
 
 body {
+	font-size: 11pt;
 	font-family: monospace;
 	background-color: black;
 	color: white;

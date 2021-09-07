@@ -13,7 +13,7 @@ const FIELDS = ['air_temperature', 'air_humidity', 'air_pressure', 'lightness', 
 const DARK_GRAY = 'rgba(255,255,255,0.1)';
 const GRAY = 'rgba(255,255,255,0.5)';
 
-function drawPlot(data, fields) {
+function drawPlot(data) {
 	uplot = new uPlot({
 		...getSize(),
 		series: [
