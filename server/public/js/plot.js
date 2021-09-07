@@ -74,8 +74,8 @@ function drawPlot(data) {
 				grid:  { stroke: DARK_GRAY, width: 1 }
 			},
 		],
-		legend: {
-			stroke: 'rgba(255,255,255,0.5)'
+		cursor: {
+			drag: { dist: 16 }
 		}
 	}, data, document.body);
 	window.addEventListener('resize', () => {
