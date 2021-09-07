@@ -8,18 +8,28 @@ const COLORS = {
 	precipitation_mm: '#4444ff'
 };
 
+function getSize() {
+	return {
+		width: window.innerWidth - 100,
+		height: window.innerHeight - 200,
+	};
+}
+
 function updatePlot(data, fields) {
 	console.log(data);
 	const opts = {
-		title: 'Vineyard Meteo',
-		width: 1280,
-		height: 600,
-		//	ms:     1,
-		//	cursor: {
-		//		x: false,
-		//		y: false,
-		//	},
+		// title: 'Vineyard Meteo',
+		...getSize(),
 		series: [
+			{},
+			{
+				label: 'Temperature',
+				scale: '°C',
+				value: (u, v) => v == null ? '-' : v.toFixed(1) + ' °C',
+				stroke: '#00ffff',
+				// width: 1/devicePixelRatio,
+			},
+			{},
 			{},
 			{
 				label: 'Lightness',
@@ -28,16 +38,11 @@ function updatePlot(data, fields) {
 				stroke: '#ffffff',
 				width: 1/devicePixelRatio,
 			},
-			{
-				label: 'Temperature',
-				scale: '°C',
-				value: (u, v) => v == null ? '-' : v.toFixed(1) + ' °C',
-				stroke: '#00ffff',
-				width: 1/devicePixelRatio,
-			}
 		],
 		axes: [
-			{ grid: { stroke: 'rgba(255,255,255,0.07)' } },
+			{
+				grid: { stroke: 'rgba(255,255,255,0.07)' }
+			},
 			{
 				stroke: 'rgba(255,255,255,0.5)',
 				scale: '°C',
@@ -46,11 +51,11 @@ function updatePlot(data, fields) {
 				grid: { stroke: 'rgba(255,255,255,0.07)' }
 			},
 			{
-				stroke: 'rgba(255,255,255,0.5)',
+				// stroke: 'rgba(255,255,255,0.5)',
 				side: 1,
 				scale: 'lx',
-				values: (u, vals, space) => vals.map(v => +v.toFixed(1) + ' lx'),
-				ticks: { stroke: 'rgba(255,255,255,0.1)' },
+				// values: (u, vals, space) => vals.map(v => +v.toFixed(1) + ' lx'),
+				// ticks: { stroke: 'rgba(255,255,255,0.1)' },
 				grid: { stroke: 'rgba(255,255,255,0.1)', show: false }
 			},
 		],
@@ -60,6 +65,9 @@ function updatePlot(data, fields) {
 	};
 
 	let uplot = new uPlot(opts, data, document.body);
+	window.addEventListener('resize', () => {
+		uplot.setSize(getSize());
+	});
 	return uplot;
 }
 
