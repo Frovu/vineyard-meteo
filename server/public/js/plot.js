@@ -1,4 +1,4 @@
-let plot;
+import uPlot from './uPlot.iife.min.js';
 
 const COLORS = {
 	air_temperature: '#00ffff',
@@ -9,46 +9,58 @@ const COLORS = {
 };
 
 function updatePlot(data, fields) {
-	if (!plot) {
-		const canvas = document.getElementById('plot');
-		plot = new Chart(canvas, { // eslint-disable-line
-			type: 'line',
-			data: { },
-			options: {
-				legend: {
-					display: true,
-					position: 'top'
-				},
-				scales: {
-					xAxes: [{
-						display: true,
-						type: 'time',
-						distribution: 'series'
-					}]
-				}
+	console.log(data);
+	const opts = {
+		title: 'Vineyard Meteo',
+		width: 1280,
+		height: 600,
+		//	ms:     1,
+		//	cursor: {
+		//		x: false,
+		//		y: false,
+		//	},
+		series: [
+			{},
+			{
+				label: 'Lightness',
+				scale: 'lx',
+				value: (u, v) => v == null ? '-' : v.toFixed(1) + ' lx',
+				stroke: '#ffffff',
+				width: 1/devicePixelRatio,
+			},
+			{
+				label: 'Temperature',
+				scale: '°C',
+				value: (u, v) => v == null ? '-' : v.toFixed(1) + ' °C',
+				stroke: '#00ffff',
+				width: 1/devicePixelRatio,
 			}
-		});
-	}
-	const getHidden = (set) => set && (set._meta[0].hidden !== null ? set._meta[0].hidden : set.hidden);
-	plot.data.datasets = fields.map((f, i) => {
-		console.log(f, getHidden(plot.data.datasets[i]), plot.data.datasets[i]);
-		return {
-			label: f,
-			data: data[f],
-			borderColor: COLORS[f],
-			fill: false,
-			yAxisID: `${f}-y-axis`,
-			hidden: plot.data.datasets[i] ? getHidden(plot.data.datasets[i]) : f.startsWith('air'),
-		};
-	});
-	plot.options.scales.yAxes = fields.map(f => {return {
-		id: `${f}-y-axis`,
-		type: 'linear',
-		display: false
-	};});
-	plot.update({
-		duration: 800
-	});
+		],
+		axes: [
+			{ grid: { stroke: 'rgba(255,255,255,0.07)' } },
+			{
+				stroke: 'rgba(255,255,255,0.5)',
+				scale: '°C',
+				values: (u, vals, space) => vals.map(v => +v.toFixed(1) + ' °C'),
+				ticks: { stroke: 'rgba(255,255,255,0.07)' },
+				grid: { stroke: 'rgba(255,255,255,0.07)' }
+			},
+			{
+				stroke: 'rgba(255,255,255,0.5)',
+				side: 1,
+				scale: 'lx',
+				values: (u, vals, space) => vals.map(v => +v.toFixed(1) + ' lx'),
+				ticks: { stroke: 'rgba(255,255,255,0.1)' },
+				grid: { stroke: 'rgba(255,255,255,0.1)', show: false }
+			},
+		],
+		legend: {
+			stroke: 'rgba(255,255,255,0.5)'
+		}
+	};
+
+	let uplot = new uPlot(opts, data, document.body);
+	return uplot;
 }
 
 function encodeParams(obj) {
@@ -66,14 +78,15 @@ async function update() { // eslint-disable-line
 	if (resp.status !== 200)
 		return console.log('Failed to fetch data', resp.status);
 	const data = await resp.json();
-	const plotData = {}; const idx = {};
-	for (const f of data.fields) {
-		plotData[f] = [];
-		idx[f] = data.fields.indexOf(f);
-	}
-	for (const r of data.rows) {
-		for (const f of data.fields) {
-			plotData[f].push({t: r[0], y: r[idx[f]]});
+	let plotData = data.fields.map(()=>Array(data.rows.length));
+	// for (const f of data.fields) {
+	// 	idx[f] = data.fields.indexOf(f);
+	// }
+	for (let i = 0; i < data.rows.length; ++i) {
+		const row = data.rows[i];
+		plotData[0][i] = new Date(row[0]).getTime()/1000;
+		for (let j = 1; j < row.length; ++j) {
+			plotData[j][i] = row[j];
 		}
 	}
 	updatePlot(plotData, data.fields);
