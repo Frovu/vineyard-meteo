@@ -1,5 +1,5 @@
 local DEV_ADDR = 0x23
-local READ_CMD = 0x10
+local READ_CMD = 0x20
 local i2c = i2c
 local id = 0
 local M = {}

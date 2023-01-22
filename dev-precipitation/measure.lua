@@ -51,21 +51,23 @@ local function measure_and_send()
 	}
 	trig_counter = 0
 	gpio.write(LED_PIN, gpio.LOW)
-	bh1750.read()
-	if bme280 then bme280:startreadout(function(T, P, H)
-		if not T or not P or not H then
-			print("bme280 returned", T, P, H)
-		end
-		data["l"] = string.format("%.2f", bh1750.read())
-		data["t"] = string.format("%.2f", T)
-		data["p"] = string.format("%.2f", P)
-		data["h"] = string.format("%.2f", H)
-		send(data)
-	end, 200)
+	bh1750.measure()
+	if bme280 then
+		bme280:startreadout(function(T, P, H)
+			if not T or not P or not H then
+				print("bme280 returned", T, P, H)
+			end
+			data["l"] = string.format("%.2f", bh1750.read())
+			data["t"] = string.format("%.2f", T)
+			data["p"] = string.format("%.2f", P)
+			data["h"] = string.format("%.2f", H)
+			send(data)
+		end, 200)
 	else
-		tmr.delay(200000)
-		data["l"] = string.format("%.2f", bh1750.read())
-		send(data)
+		tmr.create():alarm(200, tmr.ALARM_SINGLE, function()
+			data["l"] = string.format("%.2f", bh1750.read())
+			send(data)
+		end)
 	end
 	gpio.write(LED_PIN, gpio.HIGH)
 end
